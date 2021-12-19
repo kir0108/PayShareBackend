@@ -51,7 +51,7 @@ func (ur *UserRepo) Update(ctx context.Context, user *models.User) error {
 
 	query := "UPDATE users SET api_id=$2, api_name=$3, first_name=$4, second_name=$5, image_url=$6 WHERE id = $1"
 
-	if _, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIId, user.FirstName, user.SecondName, user.ImageURL);
+	if _, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIName, user.FirstName, user.SecondName, user.ImageURL);
 	err != nil {
 		var pgErr *pgconn.PgError
 
