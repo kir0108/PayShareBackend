@@ -6,6 +6,18 @@ import (
 )
 
 func (app *application) getUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, models.User{})
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
 	user, ok := r.Context().Value(contextKeyUser).(*models.User)
 	if !ok {
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
@@ -19,6 +31,18 @@ func (app *application) getUserProfileHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) updateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(models.User{}, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
 	user, ok := r.Context().Value(contextKeyUser).(*models.User)
 	if !ok {
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
