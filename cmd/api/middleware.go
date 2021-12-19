@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/go-chi/chi/v5"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/kir0108/PayShareBackend/internal/jwt"
@@ -12,8 +14,10 @@ import (
 type contextKey string
 
 const (
-	contextKeyID   = contextKey("id")
-	contextKeyUser = contextKey("user")
+	contextKeyID     = contextKey("id")
+	contextKeyUser   = contextKey("user")
+	contextKeyRoomId = contextKey("room_id")
+	contextKeyHelp   = contextKey("help")
 )
 
 var ErrCantRetrieveID = errors.New("can't retrieve id")
@@ -63,5 +67,30 @@ func (app *application) userCtx(next http.Handler) http.Handler {
 
 		userCtx := context.WithValue(r.Context(), contextKeyUser, user)
 		next.ServeHTTP(w, r.WithContext(userCtx))
+	})
+}
+
+func (app *application) roomIdCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		roomId, err := strconv.ParseInt(chi.URLParam(r, "room_id"), 10, 64)
+		if err != nil {
+			app.notFoundResponse(w, r)
+			return
+		}
+
+		roomIdCtx := context.WithValue(r.Context(), contextKeyRoomId, roomId)
+		next.ServeHTTP(w, r.WithContext(roomIdCtx))
+	})
+}
+
+func (app *application) isHelp(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		help, err := strconv.ParseBool(r.URL.Query().Get("help"))
+		if err != nil {
+			help = false
+		}
+
+		helpCtx := context.WithValue(r.Context(), contextKeyHelp, help)
+		next.ServeHTTP(w, r.WithContext(helpCtx))
 	})
 }

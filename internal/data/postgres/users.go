@@ -28,7 +28,7 @@ func (ur *UserRepo) Add(ctx context.Context, user *models.User) error {
 	query := "INSERT INTO users (api_id, api_name, first_name, second_name, image_url) VALUES ($1, $2, $3, $4, $5) " +
 		"RETURNING id"
 
-	if err := conn.QueryRow(ctx, query, user.APIId, user.APIId, user.FirstName, user.SecondName, user.ImageURL).Scan(&user.Id); err != nil {
+	if err := conn.QueryRow(ctx, query, user.APIId, user.APIName, user.FirstName, user.SecondName, user.ImageURL).Scan(&user.Id); err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.UniqueViolation {
@@ -51,9 +51,8 @@ func (ur *UserRepo) Update(ctx context.Context, user *models.User) error {
 
 	query := "UPDATE users SET api_id=$2, api_name=$3, first_name=$4, second_name=$5, image_url=$6 WHERE id = $1"
 
-	tag, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIId, user.FirstName, user.SecondName, user.ImageURL)
-
-	if err != nil {
+	if _, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIId, user.FirstName, user.SecondName, user.ImageURL);
+	err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.UniqueViolation {
@@ -61,10 +60,6 @@ func (ur *UserRepo) Update(ctx context.Context, user *models.User) error {
 		}
 
 		return err
-	}
-
-	if tag.RowsAffected() == 0 {
-		return models.ErrNoRecord
 	}
 
 	return nil
