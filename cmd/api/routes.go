@@ -31,7 +31,23 @@ func (app *application) route() http.Handler {
 		r.Post("/logout", app.logoutUserHandler)
 	})
 
-	r.With(app.auth).Route("/", func(r chi.Router) {})
+	r.With(app.isHelp).Route("/", func(r chi.Router) {
+		r.With(app.auth).Route("/user", func(r chi.Router) {
+			r.With(app.userCtx).Route("/", func(r chi.Router) {
+				r.Get("/", app.getUserProfileHandler)
+				r.Put("/", app.updateUserProfileHandler)
+
+				r.Route("/room", func(r chi.Router) {
+					r.Post("/", app.createRoomHandler)
+
+					r.With(app.roomIdCtx).Route("/{room_id}", func(r chi.Router) {
+						r.Put("/close", app.setCloseRoomHandler)
+						r.Delete("/", app.deleteRoomHandler)
+					})
+				})
+			})
+		})
+	})
 
 	return r
 }

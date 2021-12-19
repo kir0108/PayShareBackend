@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/kir0108/PayShareBackend/internal/data/models"
@@ -23,6 +24,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	api, err := app.api.GetAPI(input.Api)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
 	}
 
 	var user *models.User
@@ -39,25 +41,27 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		user, err = api.GetUser(input.Token)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
+			return
 		}
 	}
 
 
-	registeredUser, err := app.users.GetByAPI(r.Context(), user.APIName, user.APIId)
+	registeredUser, err := app.users.GetByAPI(r.Context(), user.APIId, user.APIName)
 	if err != nil {
+		fmt.Println(err.Error())
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
 			if err := app.users.Add(r.Context(), user); err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
+
+			registeredUser = user
 		default:
 			app.serverErrorResponse(w, r, err)
 			return
 		}
 	}
-
-	registeredUser = user
 
 	accessToken, err := app.jwts.CreateToken(registeredUser.Id)
 	if err != nil {

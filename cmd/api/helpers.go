@@ -164,3 +164,10 @@ func (app *application) getTokens(ctx context.Context, id int64) (*Tokens, error
 		RefreshToken: refreshToken,
 	}, nil
 }
+
+func (app *application) getHelpResponse(request interface{}, response interface{}) *models.Help {
+	return &models.Help{
+		Request:  request,
+		Response: response,
+	}
+}

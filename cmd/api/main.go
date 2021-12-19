@@ -22,6 +22,7 @@ type application struct {
 	jwts          *jwt.Manager
 	codes         *redis.CodesRepository
 	users         *postgres.UserRepo
+	rooms         *postgres.RoomRepo
 	refreshTokens *redis.RefreshTokenRepository
 	api           *auth_api.Api
 }
