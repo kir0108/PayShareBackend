@@ -31,7 +31,12 @@ func (app *application) route() http.Handler {
 		r.Post("/logout", app.logoutUserHandler)
 	})
 
-	r.With(app.auth).Route("/", func(r chi.Router) {})
+	r.With(app.auth).Route("/user", func(r chi.Router) {
+		r.With(app.userCtx).Route("/", func(r chi.Router) {
+			r.Get("/", app.getUserProfileHandler)
+			r.Put("/", app.updateUserProfileHandler)
+		})
+	})
 
 	return r
 }

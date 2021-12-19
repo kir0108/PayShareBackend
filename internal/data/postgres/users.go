@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -102,6 +103,8 @@ func (ur *UserRepo) GetById(ctx context.Context, id int64) (*models.User, error)
 
 	query := "SELECT id, api_id, api_name, first_name, second_name, image_url FROM users WHERE id=$1"
 
+	fmt.Println("ID: ", id)
+
 	user := &models.User{}
 	if err := pgxscan.Get(ctx, conn, user, query, id); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -114,7 +117,8 @@ func (ur *UserRepo) GetById(ctx context.Context, id int64) (*models.User, error)
 	return user, nil
 }
 
-func (ur *UserRepo) GetByAPI(ctx context.Context, apiName string, apiId string) (*models.User, error) {
+func (ur *UserRepo) GetByAPI(ctx context.Context, apiId string, apiName string) (*models.User, error) {
+	fmt.Println(apiId, apiName)
 	conn, err := ur.DB.Acquire(ctx)
 	if err != nil {
 		return nil, err
