@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgconn"
@@ -13,6 +14,28 @@ import (
 
 type ParticipantRepo struct {
 	DB *pgxpool.Pool
+}
+
+func (pr *ParticipantRepo) GetParticipantId(ctx context.Context, userId int64, roomId int64) (int64, error) {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	defer conn.Release()
+
+	var id sql.NullInt64
+
+	query := "SELECT id FROM participants WHERE user_id = $1 and room_id = $2"
+	if err := conn.QueryRow(ctx, query, userId, roomId).Scan(&id); err != nil {
+		return 0, err
+	}
+
+	if !id.Valid {
+		return 0, models.ErrNoRecord
+	}
+
+	return id.Int64, nil
 }
 
 func (pr *ParticipantRepo) Add(ctx context.Context, userId int64, roomId int64) error {
@@ -37,7 +60,23 @@ func (pr *ParticipantRepo) Add(ctx context.Context, userId int64, roomId int64) 
 	return nil
 }
 
-func (pr *ParticipantRepo) Delete(ctx context.Context, userId int64) error {
+func (pr *ParticipantRepo) DeleteById(ctx context.Context, id int64) error {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+
+	query := "DELETE FROM participants WHERE id = $1"
+	if _, err := conn.Exec(ctx, query, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pr *ParticipantRepo) DeleteByUserId(ctx context.Context, userId int64) error {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {
 		return err

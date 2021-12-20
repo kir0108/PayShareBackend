@@ -24,6 +24,7 @@ type application struct {
 	users         *postgres.UserRepo
 	rooms         *postgres.RoomRepo
 	participants  *postgres.ParticipantRepo
+	purchases     *postgres.PurchaseRepo
 	refreshTokens *redis.RefreshTokenRepository
 	api           *auth_api.Api
 }

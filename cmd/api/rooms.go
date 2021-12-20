@@ -2,8 +2,9 @@ package main
 
 import (
 	"errors"
-	"github.com/kir0108/PayShareBackend/internal/data/models"
 	"net/http"
+
+	"github.com/kir0108/PayShareBackend/internal/data/models"
 )
 
 func (app *application) createRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -300,7 +301,7 @@ func (app *application) deleteRoomParticipantHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	if err := app.participants.Delete(r.Context(), participantId); err != nil {
+	if err := app.participants.DeleteById(r.Context(), participantId); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
@@ -344,7 +345,7 @@ func (app *application) leaveRoomHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.participants.Delete(r.Context(), userId); err != nil {
+	if err := app.participants.DeleteByUserId(r.Context(), userId); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
