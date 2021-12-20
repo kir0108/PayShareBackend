@@ -215,3 +215,128 @@ func (app *application) getRoomCodeHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 }
+
+func (app *application) joinToRoomHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(struct {
+			Code string `json:"code"`
+		}{}, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	userId, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	input := &struct {
+		Code string `json:"code"`
+	}{}
+
+	if err := app.readJSON(w, r, input); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	roomId, err := app.codes.GetId(r.Context(), input.Code)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, errors.New("code expired"))
+			return
+		}
+
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err := app.participants.Add(r.Context(), userId, roomId); err != nil {
+		if errors.Is(err, models.ErrAlreadyExists) {
+			app.badRequestResponse(w, r, errors.New("user already join to room"))
+			return
+		}
+
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *application) deleteRoomParticipantHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	participantId, ok := r.Context().Value(contextKeyParticipantId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	if err := app.participants.Delete(r.Context(), participantId); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *application) leaveRoomHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	userId, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	room, err := app.rooms.GetById(r.Context(), roomId)
+	if err != nil {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	if room.OwnerId == userId {
+		app.badRequestResponse(w, r, errors.New("you owner"))
+		return
+	}
+
+	if err := app.participants.Delete(r.Context(), userId); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

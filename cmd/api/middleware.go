@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/kir0108/PayShareBackend/internal/data/models"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +15,11 @@ import (
 type contextKey string
 
 const (
-	contextKeyID        = contextKey("id")
-	contextKeyUser      = contextKey("user")
-	contextKeyRoomId    = contextKey("room_id")
-	contextKeyHelp      = contextKey("help")
+	contextKeyID            = contextKey("id")
+	contextKeyUser          = contextKey("user")
+	contextKeyRoomId        = contextKey("room_id")
+	contextKeyParticipantId = contextKey("participant_id")
+	contextKeyHelp          = contextKey("help")
 )
 
 var ErrCantRetrieveID = errors.New("can't retrieve id")
@@ -78,6 +80,16 @@ func (app *application) roomIdCtx(next http.Handler) http.Handler {
 			return
 		}
 
+		if _, err := app.rooms.GetById(r.Context(), roomId); err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+				app.badRequestResponse(w, r, errors.New("room dont exists"))
+				return
+			}
+
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
 		roomIdCtx := context.WithValue(r.Context(), contextKeyRoomId, roomId)
 		next.ServeHTTP(w, r.WithContext(roomIdCtx))
 	})
@@ -108,8 +120,48 @@ func (app *application) isRoomOwner(next http.Handler) http.Handler {
 		} else {
 			app.badRequestResponse(w, r, errors.New("is not owner"))
 		}
+	})
+}
 
-		return
+func (app *application) isRoomParticipants(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		exist, err := app.participants.Exist(r.Context(), id, roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !exist {
+			app.badRequestResponse(w, r, errors.New("is not participant"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) participantIdCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		participantId, err := strconv.ParseInt(chi.URLParam(r, "participant_id"), 10, 64)
+		if err != nil {
+			app.notFoundResponse(w, r)
+			return
+		}
+
+		participantIdCtx := context.WithValue(r.Context(), contextKeyParticipantId, participantId)
+		next.ServeHTTP(w, r.WithContext(participantIdCtx))
 	})
 }
 
