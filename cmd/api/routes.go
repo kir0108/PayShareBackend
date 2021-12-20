@@ -43,6 +43,10 @@ func (app *application) route() http.Handler {
 					r.With(app.roomIdCtx).Route("/{room_id}", func(r chi.Router) {
 						r.Put("/close", app.setCloseRoomHandler)
 						r.Delete("/", app.deleteRoomHandler)
+
+						r.With(app.isRoomOwner).Route("/code", func(r chi.Router) {
+							r.Post("/code", app.getRoomCodeHandler)
+						})
 					})
 				})
 			})
