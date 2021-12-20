@@ -38,6 +38,29 @@ func (pr *ParticipantRepo) GetParticipantId(ctx context.Context, userId int64, r
 	return id.Int64, nil
 }
 
+func (pr *ParticipantRepo) GetParticipantsByRoomId(ctx context.Context, roomId int64) ([]*models.ParticipantUser, error) {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer conn.Release()
+
+	var participants []*models.ParticipantUser
+
+	query := "select p.id as id, first_name, second_name, image_url from participants as p " +
+		"join users u on p.user_id = u.id where p.room_id = $1;"
+	if err := pgxscan.Select(ctx, conn, &participants, query, roomId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		}
+
+		return nil, err
+	}
+
+	return participants, nil
+}
+
 func (pr *ParticipantRepo) Add(ctx context.Context, userId int64, roomId int64) error {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {

@@ -60,6 +60,29 @@ func (pr *PurchaseRepo) GetByRoomId(ctx context.Context, roomId int64) ([]*model
 	return purchases, nil
 }
 
+func (pr *PurchaseRepo) GetParticipantIdListById(ctx context.Context, purchaseId int64) ([]*models.PurchaseParticipant, error) {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer conn.Release()
+
+	query := "SELECT participant_id, paid FROM participants_purchases WHERE purchase_id=$1"
+
+	var participants []*models.PurchaseParticipant
+
+	if err := pgxscan.Select(ctx, conn, &participants, query, purchaseId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		}
+
+		return nil, err
+	}
+
+	return participants, nil
+}
+
 func (pr *PurchaseRepo) Add(ctx context.Context, purchase *models.Purchase) error {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {
@@ -94,7 +117,7 @@ func (pr *PurchaseRepo) Update(ctx context.Context, purchase *models.Purchase) e
 
 	query := "UPDATE purchases SET owner_id = $2, room_id = $3, p_name = $4, locate = $5, cost = $6 WHERE id = $1"
 	if _, err := conn.Exec(ctx, query, purchase.Id, purchase.OwnerId, purchase.RoomId, purchase.PName, purchase.Locate, purchase.Cost);
-	err != nil {
+		err != nil {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.ForeignKeyViolation {
