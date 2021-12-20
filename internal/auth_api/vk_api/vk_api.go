@@ -56,8 +56,8 @@ func (va *VKApi) GetUser(token string) (*models.User, error) {
 		return nil, errors.New("nil response")
 	}
 
-	if respData.Response[0].Error != "" {
-		return nil, errors.New(respData.Response[0].Error)
+	if respData.Error != nil {
+		return nil, errors.New(respData.Error.ErrorMsg)
 	}
 
 	return &models.User{
