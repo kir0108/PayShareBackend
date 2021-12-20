@@ -118,7 +118,7 @@ func (rr *RoomRepo) GetParticipantOwnerIdById(ctx context.Context, roomId int64)
 	defer conn.Release()
 
 	query := "select p.id as id from rooms join participants p on rooms.id = p.room_id " +
-		"where p.id = rooms.owner_id and rooms.id = $1;"
+		"where p.user_id = rooms.owner_id and rooms.id = $1;"
 
 	var participantId sql.NullInt64
 	if err := conn.QueryRow(ctx, query, roomId).Scan(&participantId); err != nil {
