@@ -8,8 +8,6 @@ import (
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 )
 
-var ErrorInvalidCredentials = errors.New("invalid credentials")
-
 func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	input := &struct {
 		Api   string `json:"auth_api"`
@@ -18,6 +16,18 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := app.readJSON(w, r, input); err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.Api == "vk" {
+		if err := app.writeJSON(w, http.StatusBadRequest, &struct {
+			Str string `json:"str"`
+		}{
+			Str: app.config.SecretPhrase,
+		}, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
 		return
 	}
 
