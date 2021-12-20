@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/kir0108/PayShareBackend/internal/data/models"
@@ -16,18 +15,6 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := app.readJSON(w, r, input); err != nil {
 		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	if input.Api == "vk" {
-		if err := app.writeJSON(w, http.StatusBadRequest, &struct {
-			Str string `json:"str"`
-		}{
-			Str: app.config.SecretPhrase,
-		}, nil); err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
 		return
 	}
 
@@ -58,7 +45,6 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	registeredUser, err := app.users.GetByAPI(r.Context(), user.APIId, user.APIName)
 	if err != nil {
-		fmt.Println(err.Error())
 		switch {
 		case errors.Is(err, models.ErrNoRecord):
 			if err := app.users.Add(r.Context(), user); err != nil {
