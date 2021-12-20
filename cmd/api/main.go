@@ -105,13 +105,11 @@ func newRedisConfig(c *config) *redis.Config {
 }
 
 func newVKApi(c *config) *vk_api.Config {
-	return &vk_api.Config{
-	}
+	return &vk_api.Config{}
 }
 
 func newGoogleApi(c *config) *google_api.Config {
-	return &google_api.Config{
-	}
+	return &google_api.Config{}
 }
 
 func newAPI(c *config) *auth_api.Api {
