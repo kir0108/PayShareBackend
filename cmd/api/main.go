@@ -23,6 +23,7 @@ type application struct {
 	codes         *redis.CodesRepository
 	users         *postgres.UserRepo
 	rooms         *postgres.RoomRepo
+	participants  *postgres.ParticipantRepo
 	refreshTokens *redis.RefreshTokenRepository
 	api           *auth_api.Api
 }

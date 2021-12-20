@@ -6,8 +6,6 @@ import (
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -24,20 +22,26 @@ func (rr *RoomRepo) Add(ctx context.Context, room *models.Room) error {
 
 	defer conn.Release()
 
-	query := "INSERT INTO rooms (owner_id, room_name, room_date) VALUES ($1, $2, $3) " +
-		"RETURNING id"
-
-	if err := conn.QueryRow(ctx, query, room.OwnerId, room.RoomName, room.RoomDate).Scan(&room.Id); err != nil {
-		var pgErr *pgconn.PgError
-
-		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.UniqueViolation {
-			return models.ErrAlreadyExists
-		}
-
+	tx, err := conn.Begin(ctx)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	defer tx.Rollback(ctx)
+
+	query := "INSERT INTO rooms (owner_id, room_name, room_date) VALUES ($1, $2, $3) " +
+		"RETURNING id"
+
+	if err := tx.QueryRow(ctx, query, room.OwnerId, room.RoomName, room.RoomDate).Scan(&room.Id); err != nil {
+		return err
+	}
+
+	query = "INSERT INTO participants (user_id, room_id) VALUES ($1, $2)"
+	if _, err := tx.Exec(ctx, query, room.OwnerId, room.Id); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (rr *RoomRepo) UpdateClose(ctx context.Context, roomId int64, close bool) error {

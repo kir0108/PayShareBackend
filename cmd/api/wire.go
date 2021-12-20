@@ -18,6 +18,7 @@ func initApp() (*application, func(), error) {
 		postgres.NewPsqlPool,
 		wire.Struct(new(postgres.UserRepo), "*"),
 		wire.Struct(new(postgres.RoomRepo), "*"),
+		wire.Struct(new(postgres.ParticipantRepo), "*"),
 		newJwtConfig,
 		jwt.NewManger,
 		newRedisConfig,
