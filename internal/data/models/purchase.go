@@ -16,3 +16,13 @@ type Purchase struct {
 	Locate  *Locate `json:"locate" db:"locate"`
 	Cost    int64   `json:"cost" db:"cost"`
 }
+
+type PurchaseParticipant struct {
+	ParticipantId int64 `json:"participant_id" db:"participant_id"`
+	Paid          bool  `json:"paid" db:"paid"`
+}
+
+type PurchaseRoom struct {
+	*Purchase
+	Participants []*PurchaseParticipant `json:"participants"`
+}

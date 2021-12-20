@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 
@@ -106,6 +107,33 @@ func (rr *RoomRepo) GetById(ctx context.Context, roomId int64) (*models.Room, er
 	}
 
 	return room, nil
+}
+
+func (rr *RoomRepo) GetParticipantOwnerIdById(ctx context.Context, roomId int64) (int64, error) {
+	conn, err := rr.DB.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	defer conn.Release()
+
+	query := "select p.id as id from rooms join participants p on rooms.id = p.room_id " +
+		"where p.id = rooms.owner_id and rooms.id = $1;"
+
+	var participantId sql.NullInt64
+	if err := conn.QueryRow(ctx, query, roomId).Scan(&participantId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, models.ErrNoRecord
+		}
+
+		return 0, err
+	}
+
+	if !participantId.Valid {
+		return 0, models.ErrNoRecord
+	}
+
+	return participantId.Int64, nil
 }
 
 func (rr *RoomRepo) GetByOwnerId(ctx context.Context, ownerId int64) ([]*models.Room, error) {

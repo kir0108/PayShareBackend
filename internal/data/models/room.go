@@ -13,3 +13,9 @@ type RoomElement struct {
 	Purchases []*Purchase `json:"purchases"`
 	IsYour    bool        `json:"is_your"`
 }
+
+type RoomInfo struct {
+	OwnerParticipantId int64              `json:"owner_participant_id"`
+	Participants       []*ParticipantUser `json:"participants"`
+	Purchases          []*PurchaseRoom    `json:"purchases"`
+}
