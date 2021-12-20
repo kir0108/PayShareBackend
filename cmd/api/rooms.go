@@ -51,7 +51,7 @@ func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http
 		Rooms []*models.RoomElement `json:"rooms"`
 	}{}
 
-	rooms, err := app.rooms.GetByParticipantId(r.Context(), userId, false)
+	rooms, err := app.rooms.GetByUserId(r.Context(), userId, false)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			response.Rooms = nil
@@ -138,7 +138,7 @@ func (app *application) getClosedRoomsListHandler(w http.ResponseWriter, r *http
 		Rooms []*models.RoomElement `json:"rooms"`
 	}{}
 
-	rooms, err := app.rooms.GetByParticipantId(r.Context(), userId, true)
+	rooms, err := app.rooms.GetByUserId(r.Context(), userId, true)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			response.Rooms = nil

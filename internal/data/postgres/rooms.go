@@ -131,7 +131,7 @@ func (rr *RoomRepo) GetByOwnerId(ctx context.Context, ownerId int64) ([]*models.
 	return rooms, nil
 }
 
-func (rr *RoomRepo) GetByParticipantId(ctx context.Context, userId int64, close bool) ([]*models.Room, error) {
+func (rr *RoomRepo) GetByUserId(ctx context.Context, userId int64, close bool) ([]*models.Room, error) {
 	conn, err := rr.DB.Acquire(ctx)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (rr *RoomRepo) GetByParticipantId(ctx context.Context, userId int64, close 
 
 	defer conn.Release()
 
-	query := "select rooms.id as id, room_name, room_date, close " +
+	query := "select rooms.id as id, owner_id, room_name, room_date, close " +
 		"from rooms join participants p on rooms.id = p.room_id " +
 		"where p.user_id = $1 and close = $2;"
 

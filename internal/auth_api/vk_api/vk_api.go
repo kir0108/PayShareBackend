@@ -46,21 +46,25 @@ func (va *VKApi) GetUser(token string) (*models.User, error) {
 
 	defer resp.Body.Close()
 
-	var respData Response
+	var respData ApiResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
 		return nil, err
 	}
 
-	if respData.Error != "" {
-		return nil, errors.New(respData.Error)
+	if len(respData.Response) < 1 {
+		return nil, errors.New("nil response")
+	}
+
+	if respData.Error != nil {
+		return nil, errors.New(respData.Error.ErrorMsg)
 	}
 
 	return &models.User{
-		APIId:      strconv.FormatInt(respData.Id, 10),
+		APIId:      strconv.FormatInt(respData.Response[0].Id, 10),
 		APIName:    va.GetName(),
-		FirstName:  respData.FirstName,
-		SecondName: respData.LastName,
-		ImageURL:   respData.Photo400Orig,
+		FirstName:  respData.Response[0].FirstName,
+		SecondName: respData.Response[0].LastName,
+		ImageURL:   respData.Response[0].Photo400Orig,
 	}, nil
 }
