@@ -54,6 +54,12 @@ func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	participantId, ok := r.Context().Value(contextKeyParticipantId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
 	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
 	if !ok {
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
@@ -106,7 +112,10 @@ func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
 	response := &struct {
 		YourParticipantId int64            `json:"your_participant_id"`
 		RoomInfo          *models.RoomInfo `json:"room_info"`
-	}{}
+	}{
+		YourParticipantId: participantId,
+		RoomInfo:          roomTotal,
+	}
 
 	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
 		app.serverErrorResponse(w, r, err)
