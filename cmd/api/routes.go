@@ -38,8 +38,10 @@ func (app *application) route() http.Handler {
 				r.Put("/", app.updateUserProfileHandler)
 
 				r.Route("/room", func(r chi.Router) {
-					r.Post("/", app.createRoomHandler)
+					r.Get("/opened", app.getOpenedRoomsListHandler)
+					r.Get("/closed", app.getOpenedRoomsListHandler)
 
+					r.Post("/", app.createRoomHandler)
 					r.Post("/join", app.joinToRoomHandler)
 
 					r.With(app.roomIdCtx).Route("/{room_id}", func(r chi.Router) {
