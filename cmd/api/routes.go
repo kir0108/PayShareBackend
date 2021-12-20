@@ -50,6 +50,7 @@ func (app *application) route() http.Handler {
 
 						r.With(app.roomNotClosed).Route("/", func(r chi.Router) {
 							r.With(app.isRoomParticipants).Route("/", func(r chi.Router) {
+								r.Get("/", app.getRoomHandler)
 								r.Post("/code", app.getRoomCodeHandler)
 								r.With(app.isRoomOwner).With(app.participantIdCtx).Delete("/participant/{participant_id}", app.deleteRoomParticipantHandler)
 								r.Delete("/leave_room", app.leaveRoomHandler)
