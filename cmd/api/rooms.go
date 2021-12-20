@@ -7,6 +7,142 @@ import (
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 )
 
+func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, struct {
+			Rooms []models.RoomElement `json:"rooms"`
+		}{})
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	userId, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	response := &struct {
+		Rooms []*models.RoomElement `json:"rooms"`
+	}{}
+
+	rooms, err := app.rooms.GetByParticipantId(r.Context(), userId, false)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			response.Rooms = nil
+			if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+				app.serverErrorResponse(w, r, err)
+			}
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+
+		return
+	}
+
+	for _, room := range rooms {
+		purchases, err := app.purchases.GetByRoomId(r.Context(), room.Id)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			purchases = nil
+		}
+
+		response.Rooms = append(response.Rooms, &models.RoomElement{
+			Room: &models.Room{
+				Id:       room.Id,
+				RoomName: room.RoomName,
+				RoomDate: room.RoomDate,
+				Close:    room.Close,
+			},
+			Purchases: purchases,
+			IsYour: room.OwnerId == userId,
+		})
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
+func (app *application) getClosedRoomsListHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, struct {
+			Rooms []models.RoomElement `json:"rooms"`
+		}{})
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	userId, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	response := &struct {
+		Rooms []*models.RoomElement `json:"rooms"`
+	}{}
+
+	rooms, err := app.rooms.GetByParticipantId(r.Context(), userId, true)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			response.Rooms = nil
+			if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+				app.serverErrorResponse(w, r, err)
+			}
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+
+		return
+	}
+
+	for _, room := range rooms {
+		purchases, err := app.purchases.GetByRoomId(r.Context(), room.Id)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			purchases = nil
+		}
+
+		response.Rooms = append(response.Rooms, &models.RoomElement{
+			Room: &models.Room{
+				Id:       room.Id,
+				RoomName: room.RoomName,
+				RoomDate: room.RoomDate,
+				Close:    room.Close,
+			},
+			Purchases: purchases,
+			IsYour: room.OwnerId == userId,
+		})
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
 func (app *application) createRoomHandler(w http.ResponseWriter, r *http.Request) {
 	help, ok := r.Context().Value(contextKeyHelp).(bool)
 	if help && ok {
@@ -222,7 +358,9 @@ func (app *application) joinToRoomHandler(w http.ResponseWriter, r *http.Request
 	if help && ok {
 		resp := app.getHelpResponse(struct {
 			Code string `json:"code"`
-		}{}, nil)
+		}{}, struct {
+			Id int64 `json:"id"`
+		}{})
 
 		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
 			app.serverErrorResponse(w, r, err)
@@ -279,7 +417,16 @@ func (app *application) joinToRoomHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	response := &struct {
+		Id int64 `json:"id"`
+	}{
+		Id: roomId,
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 }
 
 func (app *application) deleteRoomParticipantHandler(w http.ResponseWriter, r *http.Request) {

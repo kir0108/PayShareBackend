@@ -9,7 +9,7 @@ type Locate struct {
 }
 
 type Purchase struct {
-	Id      int64   `json:"-" db:"id"`
+	Id      int64   `json:"id" db:"id"`
 	OwnerId int64   `json:"owner_id" db:"owner_id"`
 	RoomId  int64   `json:"-" db:"room_id"`
 	PName   string  `json:"name" db:"p_name"`
