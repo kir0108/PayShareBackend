@@ -46,10 +46,12 @@ func (app *application) route() http.Handler {
 						r.Put("/close", app.setCloseRoomHandler)
 						r.Delete("/", app.deleteRoomHandler)
 
-						r.With(app.isRoomParticipants).Route("/", func(r chi.Router) {
-							r.Post("/code", app.getRoomCodeHandler)
-							r.With(app.isRoomOwner).With(app.participantIdCtx).Delete("/participant/{participant_id}", app.deleteRoomParticipantHandler)
-							r.Delete("/leave_room", nil)
+						r.With(app.roomNotClosed).Route("/", func(r chi.Router) {
+							r.With(app.isRoomParticipants).Route("/", func(r chi.Router) {
+								r.Post("/code", app.getRoomCodeHandler)
+								r.With(app.isRoomOwner).With(app.participantIdCtx).Delete("/participant/{participant_id}", app.deleteRoomParticipantHandler)
+								r.Delete("/leave_room", app.leaveRoomHandler)
+							})
 						})
 					})
 				})

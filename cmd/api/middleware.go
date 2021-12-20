@@ -165,6 +165,29 @@ func (app *application) participantIdCtx(next http.Handler) http.Handler {
 	})
 }
 
+func (app *application) roomNotClosed(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		room, err := app.rooms.GetById(r.Context(), roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if room.Close {
+			app.badRequestResponse(w, r, errors.New("room closed"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (app *application) isHelp(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		help, err := strconv.ParseBool(r.URL.Query().Get("help"))

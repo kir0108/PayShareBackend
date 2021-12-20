@@ -257,6 +257,17 @@ func (app *application) joinToRoomHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	room, err := app.rooms.GetById(r.Context(), roomId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if room.Close {
+		app.badRequestResponse(w, r, errors.New("room closed"))
+		return
+	}
+
 	if err := app.participants.Add(r.Context(), userId, roomId); err != nil {
 		if errors.Is(err, models.ErrAlreadyExists) {
 			app.badRequestResponse(w, r, errors.New("user already join to room"))
