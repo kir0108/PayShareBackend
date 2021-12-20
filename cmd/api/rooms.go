@@ -7,6 +7,113 @@ import (
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 )
 
+func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, struct {
+			YourParticipantId int64            `json:"your_participant_id"`
+			RoomInfo          *models.RoomInfo `json:"room_info"`
+		}{
+			YourParticipantId: 0,
+			RoomInfo: &models.RoomInfo{
+				OwnerParticipantId: 0,
+				Participants: []*models.ParticipantUser{{
+					Id:         0,
+					FirstName:  "",
+					SecondName: "",
+					ImageURL:   "",
+				}},
+				Purchases: []*models.PurchaseRoom{{
+					Purchase:     &models.Purchase{
+						Id:      0,
+						OwnerId: 0,
+						RoomId:  0,
+						PName:   "",
+						Locate:  &models.Locate{
+							Lat:         0,
+							Long:        0,
+							ShopName:    "",
+							Date:        "",
+							Description: "",
+						},
+						Cost:    0,
+					},
+					Participants: []*models.PurchaseParticipant{{
+						ParticipantId: 0,
+						Paid:          false,
+					}},
+				}},
+			},
+		})
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	ownerId, err := app.rooms.GetParticipantOwnerIdById(r.Context(), roomId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	participants, err := app.participants.GetParticipantsByRoomId(r.Context(), roomId)
+	if err != nil {
+		if !errors.Is(err, models.ErrNoRecord) {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	roomTotal := &models.RoomInfo{
+		OwnerParticipantId: ownerId,
+		Participants:       participants,
+		Purchases:          make([]*models.PurchaseRoom, 0),
+	}
+
+	purchases, err := app.purchases.GetByRoomId(r.Context(), roomId)
+	if err != nil {
+		if !errors.Is(err, models.ErrNoRecord) {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	} else {
+		for _, purchase := range purchases {
+			purchaseParticipants, err := app.purchases.GetParticipantIdListById(r.Context(), purchase.Id)
+			if err != nil {
+				if !errors.Is(err, models.ErrNoRecord) {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
+			}
+
+			roomTotal.Purchases = append(roomTotal.Purchases, &models.PurchaseRoom{
+				Purchase:     purchase,
+				Participants: purchaseParticipants,
+			})
+		}
+	}
+
+	response := &struct {
+		YourParticipantId int64            `json:"your_participant_id"`
+		RoomInfo          *models.RoomInfo `json:"room_info"`
+	}{}
+
+	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
 func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http.Request) {
 	help, ok := r.Context().Value(contextKeyHelp).(bool)
 	if help && ok {
@@ -14,22 +121,22 @@ func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http
 			Rooms []models.RoomElement `json:"rooms"`
 		}{
 			Rooms: []models.RoomElement{{
-				Room:      &models.Room{},
+				Room: &models.Room{},
 				Purchases: []*models.Purchase{{
 					Id:      0,
 					OwnerId: 0,
 					RoomId:  0,
 					PName:   "",
-					Locate:  &models.Locate{
+					Locate: &models.Locate{
 						Lat:         0,
 						Long:        0,
 						ShopName:    "",
 						Date:        "",
 						Description: "",
 					},
-					Cost:    0,
+					Cost: 0,
 				}},
-				IsYour:    false,
+				IsYour: false,
 			}},
 		})
 
@@ -84,7 +191,7 @@ func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http
 				Close:    room.Close,
 			},
 			Purchases: purchases,
-			IsYour: room.OwnerId == userId,
+			IsYour:    room.OwnerId == userId,
 		})
 	}
 
@@ -101,22 +208,22 @@ func (app *application) getClosedRoomsListHandler(w http.ResponseWriter, r *http
 			Rooms []models.RoomElement `json:"rooms"`
 		}{
 			Rooms: []models.RoomElement{{
-				Room:      &models.Room{},
+				Room: &models.Room{},
 				Purchases: []*models.Purchase{{
 					Id:      0,
 					OwnerId: 0,
 					RoomId:  0,
 					PName:   "",
-					Locate:  &models.Locate{
+					Locate: &models.Locate{
 						Lat:         0,
 						Long:        0,
 						ShopName:    "",
 						Date:        "",
 						Description: "",
 					},
-					Cost:    0,
+					Cost: 0,
 				}},
-				IsYour:    false,
+				IsYour: false,
 			}},
 		})
 
@@ -171,7 +278,7 @@ func (app *application) getClosedRoomsListHandler(w http.ResponseWriter, r *http
 				Close:    room.Close,
 			},
 			Purchases: purchases,
-			IsYour: room.OwnerId == userId,
+			IsYour:    room.OwnerId == userId,
 		})
 	}
 
