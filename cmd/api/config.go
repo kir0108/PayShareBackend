@@ -20,7 +20,8 @@ type config struct {
 	CodeHideTTL          time.Duration `env:"CodeHideTTL" envDefault:"60m"`
 	CodeExpiredTTL       time.Duration `env:"CodeExpiredTTL" envDefault:"70m"`
 	CodeLength           int           `env:"CODE_LENGTH" envDefault:"5"`
-	IsTest               bool          `env:"IS_TEST" envDefault:"true"`
+	SecretPhrase         string        `env:"SECRET_PHRASE"`
+	IsTest               bool          `env:"IS_TEST" envDefault:"false"`
 }
 
 func getConfig() (*config, error) {

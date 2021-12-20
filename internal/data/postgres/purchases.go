@@ -37,6 +37,29 @@ func (pr *PurchaseRepo) GetById(ctx context.Context, id int64) (*models.Purchase
 	return purchase, nil
 }
 
+func (pr *PurchaseRepo) GetByRoomId(ctx context.Context, roomId int64) ([]*models.Purchase, error) {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer conn.Release()
+
+	query := "SELECT id, owner_id, room_id, p_name, locate, cost FROM purchases WHERE room_id=$1"
+
+	var purchases []*models.Purchase
+
+	if err := pgxscan.Select(ctx, conn, &purchases, query, roomId); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		}
+
+		return nil, err
+	}
+
+	return purchases, nil
+}
+
 func (pr *PurchaseRepo) Add(ctx context.Context, purchase *models.Purchase) error {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {

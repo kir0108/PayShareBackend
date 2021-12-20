@@ -7,3 +7,9 @@ type Room struct {
 	RoomDate string `json:"room_date" db:"room_date"`
 	Close    bool   `json:"close" json:"close"`
 }
+
+type RoomElement struct {
+	Room      *Room       `json:"room"`
+	Purchases []*Purchase `json:"purchases"`
+	IsYour    bool        `json:"is_your"`
+}
