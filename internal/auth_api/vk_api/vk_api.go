@@ -27,8 +27,7 @@ func (va *VKApi) GetName() string {
 }
 
 func (va *VKApi) GetUser(token string) (*models.User, error) {
-	req, err := http.NewRequest("GET", "https: //api.vk.com/method/users.get", nil)
-
+	req, err := http.NewRequest("GET", "https://api.vk.com/method/users.get", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +35,7 @@ func (va *VKApi) GetUser(token string) (*models.User, error) {
 	q := req.URL.Query()
 	q.Add("access_token", token)
 	q.Add("fields", "photo_400_orig")
+	q.Add("v", "5.131")
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := va.httpClient.Do(req)
