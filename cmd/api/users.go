@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kir0108/PayShareBackend/internal/data/models"
 	"net/http"
+
+	"github.com/kir0108/PayShareBackend/internal/data/models"
 )
 
 func (app *application) getUserProfileHandler(w http.ResponseWriter, r *http.Request) {

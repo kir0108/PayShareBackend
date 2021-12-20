@@ -40,9 +40,30 @@ func (app *application) route() http.Handler {
 				r.Route("/room", func(r chi.Router) {
 					r.Post("/", app.createRoomHandler)
 
+					r.Post("/join", app.joinToRoomHandler)
+
 					r.With(app.roomIdCtx).Route("/{room_id}", func(r chi.Router) {
 						r.Put("/close", app.setCloseRoomHandler)
 						r.Delete("/", app.deleteRoomHandler)
+
+						r.With(app.roomNotClosed).Route("/", func(r chi.Router) {
+							r.With(app.isRoomParticipants).Route("/", func(r chi.Router) {
+								r.Post("/code", app.getRoomCodeHandler)
+								r.With(app.isRoomOwner).With(app.participantIdCtx).Delete("/participant/{participant_id}", app.deleteRoomParticipantHandler)
+								r.Delete("/leave_room", app.leaveRoomHandler)
+
+								r.With(app.isRoomParticipants).Route("/purchase", func(r chi.Router) {
+									r.Post("/", app.addPurchaseHandler)
+
+									r.With(app.purchaseIdCtx).Route("/{purchase_id}", func(r chi.Router) {
+										r.With(app.isPurchaseOwner).Route("/", func(r chi.Router) {
+											r.Put("/", app.updatePurchaseHandler)
+											r.Delete("/", app.deletePurchaseHandler)
+										})
+									})
+								})
+							})
+						})
 					})
 				})
 			})

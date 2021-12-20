@@ -17,8 +17,9 @@ type config struct {
 	SessionCleanupPeriod time.Duration `env:"SESSION_CLEANUP_PERIOD" envDefault:"60s"`
 	SessionWindowPeriod  time.Duration `env:"SESSION_WINDOW_PERIOD" envDefault:"60s"`
 	SessionTokenLength   int           `env:"SESSION_TOKEN_LENGTH" envDefault:"32"`
-	CodeTTL              time.Duration `env:"CODE_TTL" envDefault:"24h"`
-	CodeLength           int           `env:"CODE_LENGTH" envDefault:"6"`
+	CodeHideTTL          time.Duration `env:"CodeHideTTL" envDefault:"60m"`
+	CodeExpiredTTL       time.Duration `env:"CodeExpiredTTL" envDefault:"70m"`
+	CodeLength           int           `env:"CODE_LENGTH" envDefault:"5"`
 	IsTest               bool          `env:"IS_TEST" envDefault:"true"`
 }
 

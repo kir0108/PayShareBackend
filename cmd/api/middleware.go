@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/kir0108/PayShareBackend/internal/data/models"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +15,12 @@ import (
 type contextKey string
 
 const (
-	contextKeyID     = contextKey("id")
-	contextKeyUser   = contextKey("user")
-	contextKeyRoomId = contextKey("room_id")
-	contextKeyHelp   = contextKey("help")
+	contextKeyID            = contextKey("id")
+	contextKeyUser          = contextKey("user")
+	contextKeyRoomId        = contextKey("room_id")
+	contextKeyParticipantId = contextKey("participant_id")
+	contextKeyPurchaseId    = contextKey("purchase_id")
+	contextKeyHelp          = contextKey("help")
 )
 
 var ErrCantRetrieveID = errors.New("can't retrieve id")
@@ -78,8 +81,165 @@ func (app *application) roomIdCtx(next http.Handler) http.Handler {
 			return
 		}
 
+		if _, err := app.rooms.GetById(r.Context(), roomId); err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+				app.badRequestResponse(w, r, errors.New("room dont exists"))
+				return
+			}
+
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
 		roomIdCtx := context.WithValue(r.Context(), contextKeyRoomId, roomId)
 		next.ServeHTTP(w, r.WithContext(roomIdCtx))
+	})
+}
+
+func (app *application) isRoomOwner(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		room, err := app.rooms.GetById(r.Context(), roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if room.OwnerId == id {
+			next.ServeHTTP(w, r)
+		} else {
+			app.badRequestResponse(w, r, errors.New("is not owner"))
+		}
+	})
+}
+
+func (app *application) isRoomParticipants(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		exist, err := app.participants.Exist(r.Context(), id, roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !exist {
+			app.badRequestResponse(w, r, errors.New("is not participant"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) participantIdCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		participantId, err := strconv.ParseInt(chi.URLParam(r, "participant_id"), 10, 64)
+		if err != nil {
+			app.notFoundResponse(w, r)
+			return
+		}
+
+		participantIdCtx := context.WithValue(r.Context(), contextKeyParticipantId, participantId)
+		next.ServeHTTP(w, r.WithContext(participantIdCtx))
+	})
+}
+
+func (app *application) purchaseIdCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		purchaseId, err := strconv.ParseInt(chi.URLParam(r, "purchase_id"), 10, 64)
+		if err != nil {
+			app.notFoundResponse(w, r)
+			return
+		}
+
+		purchaseIdCtx := context.WithValue(r.Context(), contextKeyPurchaseId, purchaseId)
+		next.ServeHTTP(w, r.WithContext(purchaseIdCtx))
+	})
+}
+
+func (app *application) isPurchaseOwner(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userId, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		purchaseId, ok := r.Context().Value(contextKeyPurchaseId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		participantId, err := app.participants.GetParticipantId(r.Context(), userId, roomId)
+		if !ok {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		purchase, err := app.purchases.GetById(r.Context(), purchaseId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if purchase.OwnerId != participantId {
+			app.badRequestResponse(w, r, errors.New("is no purchase owner"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) roomNotClosed(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		room, err := app.rooms.GetById(r.Context(), roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if room.Close {
+			app.badRequestResponse(w, r, errors.New("room closed"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }
 

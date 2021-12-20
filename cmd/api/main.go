@@ -23,6 +23,8 @@ type application struct {
 	codes         *redis.CodesRepository
 	users         *postgres.UserRepo
 	rooms         *postgres.RoomRepo
+	participants  *postgres.ParticipantRepo
+	purchases     *postgres.PurchaseRepo
 	refreshTokens *redis.RefreshTokenRepository
 	api           *auth_api.Api
 }
@@ -94,7 +96,8 @@ func newJwtConfig(c *config) *jwt.Config {
 func newRedisConfig(c *config) *redis.Config {
 	return &redis.Config{
 		RedisUrl:             c.RedisUrl,
-		CodeTTL:              c.CodeTTL,
+		CodeHideTTL:          c.CodeHideTTL,
+		CodeExpiredTTL:       c.CodeExpiredTTL,
 		SessionTTl:           c.SessionTTl,
 		SessionCleanupPeriod: c.SessionCleanupPeriod,
 		SessionWindowPeriod:  c.SessionWindowPeriod,
