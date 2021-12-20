@@ -12,7 +12,26 @@ func (app *application) getOpenedRoomsListHandler(w http.ResponseWriter, r *http
 	if help && ok {
 		resp := app.getHelpResponse(nil, struct {
 			Rooms []models.RoomElement `json:"rooms"`
-		}{})
+		}{
+			Rooms: []models.RoomElement{{
+				Room:      &models.Room{},
+				Purchases: []*models.Purchase{{
+					Id:      0,
+					OwnerId: 0,
+					RoomId:  0,
+					PName:   "",
+					Locate:  &models.Locate{
+						Lat:         0,
+						Long:        0,
+						ShopName:    "",
+						Date:        "",
+						Description: "",
+					},
+					Cost:    0,
+				}},
+				IsYour:    false,
+			}},
+		})
 
 		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
 			app.serverErrorResponse(w, r, err)
@@ -80,7 +99,26 @@ func (app *application) getClosedRoomsListHandler(w http.ResponseWriter, r *http
 	if help && ok {
 		resp := app.getHelpResponse(nil, struct {
 			Rooms []models.RoomElement `json:"rooms"`
-		}{})
+		}{
+			Rooms: []models.RoomElement{{
+				Room:      &models.Room{},
+				Purchases: []*models.Purchase{{
+					Id:      0,
+					OwnerId: 0,
+					RoomId:  0,
+					PName:   "",
+					Locate:  &models.Locate{
+						Lat:         0,
+						Long:        0,
+						ShopName:    "",
+						Date:        "",
+						Description: "",
+					},
+					Cost:    0,
+				}},
+				IsYour:    false,
+			}},
+		})
 
 		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
 			app.serverErrorResponse(w, r, err)
