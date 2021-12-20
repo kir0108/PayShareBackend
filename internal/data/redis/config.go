@@ -4,7 +4,8 @@ import "time"
 
 type Config struct {
 	RedisUrl             string
-	CodeTTL              time.Duration
+	CodeHideTTL          time.Duration
+	CodeExpiredTTL       time.Duration
 	SessionTTl           time.Duration
 	SessionCleanupPeriod time.Duration
 	SessionWindowPeriod  time.Duration

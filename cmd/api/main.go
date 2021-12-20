@@ -94,7 +94,8 @@ func newJwtConfig(c *config) *jwt.Config {
 func newRedisConfig(c *config) *redis.Config {
 	return &redis.Config{
 		RedisUrl:             c.RedisUrl,
-		CodeTTL:              c.CodeTTL,
+		CodeHideTTL:          c.CodeHideTTL,
+		CodeExpiredTTL:       c.CodeExpiredTTL,
 		SessionTTl:           c.SessionTTl,
 		SessionCleanupPeriod: c.SessionCleanupPeriod,
 		SessionWindowPeriod:  c.SessionWindowPeriod,

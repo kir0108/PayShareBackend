@@ -157,3 +157,61 @@ func (app *application) setCloseRoomHandler(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (app *application) getRoomCodeHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(nil, struct {
+			Code string `json:"code"`
+		}{})
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	code, err := app.codes.GetCode(r.Context(), roomId)
+	if err != nil {
+		if !errors.Is(err, models.ErrNoRecord) {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		for {
+			code, err = app.generateNumberString(app.config.CodeLength)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			if err := app.codes.Add(r.Context(), code, roomId); err != nil {
+				if !errors.Is(err, models.ErrAlreadyExists) {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
+			} else {
+				break
+			}
+		}
+	}
+
+	response := &struct {
+		Code string `json:"code"`
+	}{
+		Code: code,
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, response, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}

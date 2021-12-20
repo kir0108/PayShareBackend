@@ -14,10 +14,10 @@ import (
 type contextKey string
 
 const (
-	contextKeyID     = contextKey("id")
-	contextKeyUser   = contextKey("user")
-	contextKeyRoomId = contextKey("room_id")
-	contextKeyHelp   = contextKey("help")
+	contextKeyID        = contextKey("id")
+	contextKeyUser      = contextKey("user")
+	contextKeyRoomId    = contextKey("room_id")
+	contextKeyHelp      = contextKey("help")
 )
 
 var ErrCantRetrieveID = errors.New("can't retrieve id")
@@ -80,6 +80,36 @@ func (app *application) roomIdCtx(next http.Handler) http.Handler {
 
 		roomIdCtx := context.WithValue(r.Context(), contextKeyRoomId, roomId)
 		next.ServeHTTP(w, r.WithContext(roomIdCtx))
+	})
+}
+
+func (app *application) isRoomOwner(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
+		if !ok {
+			app.serverErrorResponse(w, r, ErrCantRetrieveID)
+			return
+		}
+
+		room, err := app.rooms.GetById(r.Context(), roomId)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if room.OwnerId == id {
+			next.ServeHTTP(w, r)
+		} else {
+			app.badRequestResponse(w, r, errors.New("is not owner"))
+		}
+
+		return
 	})
 }
 
