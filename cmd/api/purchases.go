@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/kir0108/PayShareBackend/internal/data/models"
@@ -66,6 +67,95 @@ func (app *application) addPurchaseHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (app *application) joinOrLeaveToPurchaseHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(struct {
+			ParticipantId int64 `json:"participant_id"`
+			Join          bool  `json:"join"`
+		}{}, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	purchaseId, ok := r.Context().Value(contextKeyPurchaseId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	input := &struct {
+		ParticipantId int64 `json:"participant_id"`
+		Join          bool  `json:"join"`
+	}{}
+
+	if err := app.readJSON(w, r, input); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if input.Join {
+		if err := app.purchases.AddParticipantToPurchase(r.Context(), purchaseId, input.ParticipantId); err != nil {
+			if !errors.Is(err, models.ErrAlreadyExists) {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+	} else {
+		if err := app.purchases.DeleteParticipantFromPurchase(r.Context(), purchaseId, input.ParticipantId); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *application) setPaidPurchaseParamHandler(w http.ResponseWriter, r *http.Request) {
+	help, ok := r.Context().Value(contextKeyHelp).(bool)
+	if help && ok {
+		resp := app.getHelpResponse(struct {
+			ParticipantId int64 `json:"participant_id"`
+			Paid          bool  `json:"paid"`
+		}{}, nil)
+
+		if err := app.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		return
+	}
+
+	purchaseId, ok := r.Context().Value(contextKeyPurchaseId).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
+	input := &struct {
+		ParticipantId int64 `json:"participant_id"`
+		Paid          bool  `json:"paid"`
+	}{}
+
+	if err := app.readJSON(w, r, input); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err := app.purchases.UpdatePaidParamPurchase(r.Context(), purchaseId, input.ParticipantId, input.Paid); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (app *application) updatePurchaseHandler(w http.ResponseWriter, r *http.Request) {
 	help, ok := r.Context().Value(contextKeyHelp).(bool)
 	if help && ok {
@@ -83,15 +173,21 @@ func (app *application) updatePurchaseHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	userId, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+		return
+	}
+
 	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
 	if !ok {
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
 		return
 	}
 
-	participantId, ok := r.Context().Value(contextKeyParticipantId).(int64)
-	if !ok {
-		app.serverErrorResponse(w, r, ErrCantRetrieveID)
+	participantId, err := app.participants.GetParticipantId(r.Context(), userId, roomId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 

@@ -145,3 +145,63 @@ func (pr *PurchaseRepo) Delete(ctx context.Context, id int64) error {
 
 	return nil
 }
+
+func (pr *PurchaseRepo) AddParticipantToPurchase(ctx context.Context, purchaseId int64, participantId int64) error {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+
+	query := "INSERT INTO participants_purchases (purchase_id, participant_id) VALUES ($1, $2)"
+	if _, err := conn.Exec(ctx, query, purchaseId, participantId);
+		err != nil {
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.ForeignKeyViolation {
+			return models.ErrNoReference
+		}
+
+		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.UniqueViolation {
+			return models.ErrAlreadyExists
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (pr *PurchaseRepo) UpdatePaidParamPurchase(ctx context.Context, purchaseId int64, participantId int64, paid bool) error {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+
+	query := "UPDATE participants_purchases SET paid = $3 WHERE purchase_id = $1 and participant_id = $2"
+	if _, err := conn.Exec(ctx, query, purchaseId, participantId, paid); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pr *PurchaseRepo) DeleteParticipantFromPurchase(ctx context.Context, purchaseId int64, participantId int64) error {
+	conn, err := pr.DB.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Release()
+
+	query := "DELETE FROM participants_purchases WHERE purchase_id = $1 and participant_id = $2"
+	if _, err := conn.Exec(ctx, query, purchaseId, participantId);
+		err != nil {
+		return err
+	}
+
+	return nil
+}

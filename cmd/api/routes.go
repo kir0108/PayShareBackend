@@ -63,6 +63,9 @@ func (app *application) route() http.Handler {
 									r.Post("/", app.addPurchaseHandler)
 
 									r.With(app.purchaseIdCtx).Route("/{purchase_id}", func(r chi.Router) {
+										r.Put("/join", app.joinOrLeaveToPurchaseHandler)
+										r.Put("/paid", app.setPaidPurchaseParamHandler)
+
 										r.With(app.isPurchaseOwner).Route("/", func(r chi.Router) {
 											r.Put("/", app.updatePurchaseHandler)
 											r.Delete("/", app.deletePurchaseHandler)
