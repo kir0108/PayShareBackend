@@ -28,6 +28,10 @@ func (pr *ParticipantRepo) GetParticipantId(ctx context.Context, userId int64, r
 
 	query := "SELECT id FROM participants WHERE user_id = $1 and room_id = $2"
 	if err := conn.QueryRow(ctx, query, userId, roomId).Scan(&id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, models.ErrNoRecord
+		}
+
 		return 0, err
 	}
 

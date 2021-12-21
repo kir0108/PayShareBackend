@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kir0108/PayShareBackend/internal/data/models"
 	"net/http"
@@ -148,6 +149,8 @@ func (app *application) isRoomParticipants(next http.Handler) http.Handler {
 			app.badRequestResponse(w, r, errors.New("is not participant"))
 			return
 		}
+
+		fmt.Println("complete isRoomParticipants")
 
 		next.ServeHTTP(w, r)
 	})
