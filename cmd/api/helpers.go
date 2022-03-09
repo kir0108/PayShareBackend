@@ -90,6 +90,10 @@ var limitNum = big.NewInt(int64(len(numbers)))
 var limitUp = big.NewInt(int64(len(alphabetUp)))
 
 func (app *application) generateRandomString(n int) (string, error) {
+	if app.config.Secret == "test_secret" {
+		return "test_refresh_token", nil
+	}
+
 	b := make([]byte, n)
 
 	for i := range b {

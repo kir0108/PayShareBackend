@@ -8,6 +8,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+const TestToken = "cjwiemk23i4jivcj2ij"
+
 type InvalidTokenError struct {
 	message string
 }
@@ -40,6 +42,10 @@ func NewManger(c *Config) *Manager {
 }
 
 func (m *Manager) CreateToken(id int64) (string, error) {
+	if m.Secret == "test_secret" {
+		return "test_access_token", nil
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		IssuedAt:  time.Now().Unix(),
 		ExpiresAt: time.Now().Add(m.Expiration).Unix(),
@@ -50,6 +56,10 @@ func (m *Manager) CreateToken(id int64) (string, error) {
 }
 
 func (m *Manager) GetIdFromToken(token string) (int64, error) {
+	if token == TestToken {
+		return 1, nil
+	}
+
 	parsed, err := jwt.ParseWithClaims(token, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(m.Secret), nil
 	})

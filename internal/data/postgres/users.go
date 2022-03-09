@@ -17,6 +17,14 @@ type UserRepo struct {
 	DB *pgxpool.Pool
 }
 
+type UserRepoType interface {
+	Add(ctx context.Context, user *models.User) error
+	Update(ctx context.Context, user *models.User) error
+	Delete(ctx context.Context, id int64) error
+	GetById(ctx context.Context, id int64) (*models.User, error)
+	GetByAPI(ctx context.Context, apiId string, apiName string) (*models.User, error)
+}
+
 func (ur *UserRepo) Add(ctx context.Context, user *models.User) error {
 	conn, err := ur.DB.Acquire(ctx)
 	if err != nil {
@@ -51,8 +59,7 @@ func (ur *UserRepo) Update(ctx context.Context, user *models.User) error {
 
 	query := "UPDATE users SET api_id=$2, api_name=$3, first_name=$4, second_name=$5, image_url=$6 WHERE id = $1"
 
-	if _, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIName, user.FirstName, user.SecondName, user.ImageURL);
-	err != nil {
+	if _, err := conn.Exec(ctx, query, user.Id, user.APIId, user.APIName, user.FirstName, user.SecondName, user.ImageURL); err != nil {
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.UniqueViolation {

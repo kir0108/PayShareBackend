@@ -12,7 +12,7 @@ type config struct {
 	PostgresUrl          string        `env:"POSTGRES_URL" envDefault:"postgres://postgres:carnetpass@db:5432/postgres?sslmode=disable"`
 	RedisUrl             string        `env:"REDIS_URL" envDefault:"redis:6379"`
 	JwtTTL               time.Duration `env:"TOKEN_TTL" envDefault:"20m"`
-	Secret               string        `env:"SECRET,required"`
+	Secret               string        `env:"SECRET" envDefault:"test_secret"`
 	SessionTTl           time.Duration `env:"SESSION_TTL" envDefault:"168h"`
 	SessionCleanupPeriod time.Duration `env:"SESSION_CLEANUP_PERIOD" envDefault:"60s"`
 	SessionWindowPeriod  time.Duration `env:"SESSION_WINDOW_PERIOD" envDefault:"60s"`

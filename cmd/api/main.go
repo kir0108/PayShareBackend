@@ -20,12 +20,12 @@ type application struct {
 	config        *config
 	logger        *zap.SugaredLogger
 	jwts          *jwt.Manager
-	codes         *redis.CodesRepository
-	users         *postgres.UserRepo
-	rooms         *postgres.RoomRepo
-	participants  *postgres.ParticipantRepo
-	purchases     *postgres.PurchaseRepo
-	refreshTokens *redis.RefreshTokenRepository
+	codes         redis.CodesRepositoryType
+	users         postgres.UserRepoType
+	rooms         postgres.RoomRepoType
+	participants  postgres.ParticipantRepoType
+	purchases     postgres.PurchaseRepoType
+	refreshTokens redis.RefreshTokenRepositoryType
 	api           *auth_api.Api
 }
 

@@ -16,7 +16,16 @@ type CodesRepository struct {
 	CodeExpiredTTL time.Duration
 }
 
-func NewCodesRepository(pool *redis.Pool, c *Config) *CodesRepository {
+type CodesRepositoryType interface {
+	Add(ctx context.Context, code string, id int64) error
+	GetCode(ctx context.Context, id int64) (string, error)
+	GetId(ctx context.Context, code string) (int64, error)
+	Exist(ctx context.Context, code string) (bool, error)
+	CodeExpired(ctx context.Context, code string) (bool, error)
+	Delete(ctx context.Context, code string) error
+}
+
+func NewCodesRepository(pool *redis.Pool, c *Config) CodesRepositoryType {
 	return &CodesRepository{
 		Pool:           pool,
 		CodeHideTTL:    c.CodeHideTTL,
@@ -110,7 +119,7 @@ func (cr *CodesRepository) CodeExpired(ctx context.Context, code string) (bool, 
 		return false, err
 	}
 
-	if ttl < int64(cr.CodeExpiredTTL - cr.CodeHideTTL) {
+	if ttl < int64(cr.CodeExpiredTTL-cr.CodeHideTTL) {
 		return true, nil
 	}
 

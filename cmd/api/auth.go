@@ -26,22 +26,11 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user *models.User
 
-	if app.config.IsTest {
-		user = &models.User{
-			APIId:      input.Api + "test",
-			APIName:    input.Api,
-			FirstName:  "Test",
-			SecondName: input.Api,
-			ImageURL:   "",
-		}
-	} else {
-		user, err = api.GetUser(input.Token)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
+	user, err = api.GetUser(input.Token)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
 	}
-
 
 	registeredUser, err := app.users.GetByAPI(r.Context(), user.APIId, user.APIName)
 	if err != nil {
@@ -138,6 +127,11 @@ func (app *application) refreshTokenHandler(w http.ResponseWriter, r *http.Reque
 		if err := app.refreshTokens.Refresh(r.Context(), input.RefreshToken, newRefreshToken); err != nil {
 			if errors.Is(err, models.ErrAlreadyExists) {
 				continue
+			}
+
+			if errors.Is(err, models.ErrNoRecord) {
+				app.unauthorizedResponse(w, r, errors.New("no such session"))
+				return
 			}
 			app.serverErrorResponse(w, r, err)
 			return

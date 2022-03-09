@@ -6,6 +6,9 @@ import (
 )
 
 func (app *application) logError(r *http.Request, err error) {
+	if app.config.Secret == "test_secret" {
+		return
+	}
 	app.logger.Errorw("server error", "error", err)
 }
 
@@ -26,7 +29,9 @@ func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) clientErrorResponse(w http.ResponseWriter, r *http.Request, status int, message interface{}) {
-	app.logger.Debugw("client error", "err", message)
+	if app.config.Secret != "test_secret" {
+		app.logger.Debugw("client error", "err", message)
+	}
 	app.errorResponse(w, r, status, message)
 }
 

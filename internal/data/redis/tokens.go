@@ -17,7 +17,16 @@ type RefreshTokenRepository struct {
 	SessionWindowPeriod time.Duration
 }
 
-func NewRefreshTokenRepository(pool *redis.Pool, c *Config, logger *zap.SugaredLogger) (*RefreshTokenRepository, func()) {
+type RefreshTokenRepositoryType interface {
+	Add(ctx context.Context, session string, id int64) error
+	Get(ctx context.Context, session string) (int64, error)
+	Refresh(ctx context.Context, old, new string) error
+	Delete(ctx context.Context, session string) error
+	DeleteExpired(ctx context.Context) error
+	DeleteByUserID(ctx context.Context, id int64) error
+}
+
+func NewRefreshTokenRepository(pool *redis.Pool, c *Config, logger *zap.SugaredLogger) (RefreshTokenRepositoryType, func()) {
 	sr := &RefreshTokenRepository{Pool: pool, SessionTTL: c.SessionTTl, SessionWindowPeriod: c.SessionWindowPeriod}
 
 	done := make(chan bool)

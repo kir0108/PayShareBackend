@@ -15,6 +15,18 @@ type PurchaseRepo struct {
 	DB *pgxpool.Pool
 }
 
+type PurchaseRepoType interface {
+	GetById(ctx context.Context, id int64) (*models.Purchase, error)
+	GetByRoomId(ctx context.Context, roomId int64) ([]*models.Purchase, error)
+	GetParticipantIdListById(ctx context.Context, purchaseId int64) ([]*models.PurchaseParticipant, error)
+	Add(ctx context.Context, purchase *models.Purchase) error
+	Update(ctx context.Context, purchase *models.Purchase) error
+	Delete(ctx context.Context, id int64) error
+	AddParticipantToPurchase(ctx context.Context, purchaseId int64, participantId int64) error
+	UpdatePaidParamPurchase(ctx context.Context, purchaseId int64, participantId int64, paid bool) error
+	DeleteParticipantFromPurchase(ctx context.Context, purchaseId int64, participantId int64) error
+}
+
 func (pr *PurchaseRepo) GetById(ctx context.Context, id int64) (*models.Purchase, error) {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {
@@ -116,8 +128,7 @@ func (pr *PurchaseRepo) Update(ctx context.Context, purchase *models.Purchase) e
 	defer conn.Release()
 
 	query := "UPDATE purchases SET owner_id = $2, room_id = $3, p_name = $4, locate = $5, cost = $6 WHERE id = $1"
-	if _, err := conn.Exec(ctx, query, purchase.Id, purchase.OwnerId, purchase.RoomId, purchase.PName, purchase.Locate, purchase.Cost);
-		err != nil {
+	if _, err := conn.Exec(ctx, query, purchase.Id, purchase.OwnerId, purchase.RoomId, purchase.PName, purchase.Locate, purchase.Cost); err != nil {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.ForeignKeyViolation {
@@ -155,8 +166,7 @@ func (pr *PurchaseRepo) AddParticipantToPurchase(ctx context.Context, purchaseId
 	defer conn.Release()
 
 	query := "INSERT INTO participants_purchases (purchase_id, participant_id) VALUES ($1, $2)"
-	if _, err := conn.Exec(ctx, query, purchaseId, participantId);
-		err != nil {
+	if _, err := conn.Exec(ctx, query, purchaseId, participantId); err != nil {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr); pgErr.Code == pgerrcode.ForeignKeyViolation {
@@ -198,8 +208,7 @@ func (pr *PurchaseRepo) DeleteParticipantFromPurchase(ctx context.Context, purch
 	defer conn.Release()
 
 	query := "DELETE FROM participants_purchases WHERE purchase_id = $1 and participant_id = $2"
-	if _, err := conn.Exec(ctx, query, purchaseId, participantId);
-		err != nil {
+	if _, err := conn.Exec(ctx, query, purchaseId, participantId); err != nil {
 		return err
 	}
 

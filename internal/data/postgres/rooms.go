@@ -15,6 +15,16 @@ type RoomRepo struct {
 	DB *pgxpool.Pool
 }
 
+type RoomRepoType interface {
+	Add(ctx context.Context, room *models.Room) error
+	UpdateClose(ctx context.Context, roomId int64, close bool) error
+	Delete(ctx context.Context, roomId int64) error
+	GetById(ctx context.Context, roomId int64) (*models.Room, error)
+	GetParticipantOwnerIdById(ctx context.Context, roomId int64) (int64, error)
+	GetByOwnerId(ctx context.Context, ownerId int64) ([]*models.Room, error)
+	GetByUserId(ctx context.Context, userId int64, close bool) ([]*models.Room, error)
+}
+
 func (rr *RoomRepo) Add(ctx context.Context, room *models.Room) error {
 	conn, err := rr.DB.Acquire(ctx)
 	if err != nil {

@@ -16,6 +16,15 @@ type ParticipantRepo struct {
 	DB *pgxpool.Pool
 }
 
+type ParticipantRepoType interface {
+	GetParticipantId(ctx context.Context, userId int64, roomId int64) (int64, error)
+	GetParticipantsByRoomId(ctx context.Context, roomId int64) ([]*models.ParticipantUser, error)
+	Add(ctx context.Context, userId int64, roomId int64) error
+	DeleteById(ctx context.Context, id int64) error
+	DeleteByUserId(ctx context.Context, userId int64) error
+	Exist(ctx context.Context, userId int64, roomId int64) (bool, error)
+}
+
 func (pr *ParticipantRepo) GetParticipantId(ctx context.Context, userId int64, roomId int64) (int64, error) {
 	conn, err := pr.DB.Acquire(ctx)
 	if err != nil {
