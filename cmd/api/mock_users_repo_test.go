@@ -9,6 +9,8 @@ import (
 const (
 	ErrAlreadyExistUserName = "Anton"
 	ErrOtherUserName        = "Grisha"
+	ErrAlreadyExistApiName  = "google"
+	ErrAlreadyExistApiId    = "hcgdksbducfb"
 	ErrNoRecordById         = 12
 	ErrOtherById            = 13
 	ErrOtherByApiId         = "user_repo_err_other_api_id"
@@ -17,10 +19,10 @@ const (
 type MockUsersRepo struct{}
 
 func (m MockUsersRepo) Add(ctx context.Context, user *models.User) error {
-	switch user.FirstName {
-	case ErrAlreadyExistUserName:
+	switch {
+	case user.APIName == ErrAlreadyExistApiName && user.APIId == ErrAlreadyExistApiId:
 		return models.ErrAlreadyExists
-	case ErrOtherUserName:
+	case user.FirstName == ErrOtherUserName:
 		return errors.New("other error")
 	default:
 		return nil
@@ -28,10 +30,10 @@ func (m MockUsersRepo) Add(ctx context.Context, user *models.User) error {
 }
 
 func (m MockUsersRepo) Update(ctx context.Context, user *models.User) error {
-	switch user.FirstName {
-	case ErrAlreadyExistUserName:
+	switch {
+	case user.APIName == ErrAlreadyExistApiName && user.APIId == ErrAlreadyExistApiId:
 		return models.ErrAlreadyExists
-	case ErrOtherUserName:
+	case user.FirstName == ErrOtherUserName:
 		return errors.New("other error")
 	default:
 		return nil

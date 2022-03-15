@@ -5,24 +5,26 @@ import (
 	"encoding/json"
 	"github.com/kir0108/PayShareBackend/internal/auth_api"
 	"github.com/kir0108/PayShareBackend/internal/jwt"
-	"log"
 	"net/http"
 	"time"
 )
 
 const (
-	CorrectTestApiId   = "correct_test_api_id"
-	IncorrectTestApiId = "incorrect_test_api_id"
-	GoogleApiName      = "google"
-	VkApiName          = "vk"
-	DefaultCode        = "172637"
-	DefaultUserId      = 1
+	CorrectTestApiId     = "correct_test_api_id"
+	IncorrectTestApiId   = "incorrect_test_api_id"
+	GoogleApiName        = "google"
+	VkApiName            = "vk"
+	DefaultCode          = "172637"
+	DefaultUserId        = 1
+	DefaultRoomId        = 1
+	DefaultParticipantId = 1
 )
 
 type RequestArgs struct {
 	Method      string
 	URL         string
 	QueryParams map[string]string
+	Headers     http.Header
 	Body        interface{}
 }
 
@@ -30,11 +32,6 @@ type ResponseTest struct {
 	Headers http.Header
 	Code    int
 	Body    string
-}
-
-func FatalErr(name string, err error) {
-	logger := &log.Logger{}
-	logger.Fatalf("test %s err %s", name, err.Error())
 }
 
 func (r *RequestArgs) GetRequest() (*http.Request, error) {
@@ -46,6 +43,10 @@ func (r *RequestArgs) GetRequest() (*http.Request, error) {
 	req, err := http.NewRequest(r.Method, r.URL, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
+	}
+
+	if r.Headers != nil {
+		req.Header = r.Headers
 	}
 
 	q := req.URL.Query()
@@ -72,6 +73,8 @@ func GetTestApplication() *application {
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	config.Secret = "test_secret"
 
 	return &application{
 		config:        config,

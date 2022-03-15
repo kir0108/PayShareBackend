@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/kir0108/PayShareBackend/internal/data/models"
@@ -370,17 +371,23 @@ func (app *application) deleteRoomHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	fmt.Println("roomId: ", "roomId")
+
 	user, ok := r.Context().Value(contextKeyUser).(*models.User)
 	if !ok {
+		fmt.Println("err: ", user.FirstName)
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
 		return
 	}
 
 	roomId, ok := r.Context().Value(contextKeyRoomId).(int64)
 	if !ok {
+		fmt.Println("err: ", roomId)
 		app.serverErrorResponse(w, r, ErrCantRetrieveID)
 		return
 	}
+
+	fmt.Println("roomId: ", roomId)
 
 	room, err := app.rooms.GetById(r.Context(), roomId)
 	if err != nil {
