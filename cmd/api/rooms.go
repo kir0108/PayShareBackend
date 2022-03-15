@@ -721,7 +721,13 @@ func (app *application) leaveRoomHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.participants.DeleteByUserId(r.Context(), userId); err != nil {
+	pId, err := app.participants.GetParticipantId(r.Context(), userId, roomId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err := app.participants.DeleteById(r.Context(), pId); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
