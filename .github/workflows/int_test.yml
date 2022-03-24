@@ -33,10 +33,6 @@ jobs:
             Appium-Python-Client
       - name: Test
         run: python3 -m pytest tests/api -v --html=report.html
-        
-  upload_report:   
-    runs-on: ubuntu-latest
-    steps:
       - name: Upload report
         uses: actions/upload-artifact@v1
         with:
