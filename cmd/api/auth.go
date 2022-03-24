@@ -26,13 +26,18 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user *models.User
 
+	imageUrl := map[string]string{
+		"google": "https://www.m24.ru/b/d/nBkSUhL2jVUgm82xPqzJrMCqzJ3w-pun2XyQ2q2C_2OZcGuaSnvVjCdg4M4S7FjDvM_AtC_QbIk8W7zj1GdwKSGT_w=VKxfke3fPJFrcYKGoS-5yg.jpg",
+		"vk":     "https://static.wikia.nocookie.net/gorillaz/images/0/04/Noooodes.jpg/revision/latest?cb=20181101202938&path-prefix=ru",
+	}
+
 	if app.config.IsTest {
 		user = &models.User{
 			APIId:      input.Api + "test",
 			APIName:    input.Api,
 			FirstName:  "Test",
 			SecondName: input.Api,
-			ImageURL:   "",
+			ImageURL:   imageUrl[input.Api],
 		}
 	} else {
 		user, err = api.GetUser(input.Token)
@@ -41,7 +46,6 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 
 	registeredUser, err := app.users.GetByAPI(r.Context(), user.APIId, user.APIName)
 	if err != nil {
